@@ -1854,7 +1854,7 @@ begin figtree;
 	set tipLabels.fontName="sansserif";
 	set tipLabels.fontSize=5;
 	set tipLabels.fontStyle=0;
-	set tipLabels.isShown=false;
+	set tipLabels.isShown=true;
 	set tipLabels.significantDigits=4;
 	set trees.order=true;
 	set trees.orderType="increasing";
