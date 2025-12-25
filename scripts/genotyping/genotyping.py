@@ -1,109 +1,157 @@
 import argparse
+import os
 import re
 import csv
-import os
 from Bio import SeqIO
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill
 
-def genotyping(rep_in, tree_in, csv_in):
-    '''
-    The function assigns genotype/serotype/taxon to sequences in alignments in fasta format using colored tree in nexus format.
-    Output is file in fasta format with updated sequence names.
-    rep_in - repository of fasta alignments
-    tree_in - colored phylogenetic tree in nexus format
-    csv_in - comma separated table with colors and corresponding genogroups/serotype/taxon
-        Example:
-        #3333ff,GI
-        #00ccff,GII
-    
-    '''
-    tl_fl = 0 
-    names_dict = {}  
-    unknown_counter = 0
-    conflict_counter = 0
+def parse_colored_nexus(nexus_file):
+    """Parse a colored Nexus tree and return {color_hex: [sequence_ids]}"""
+    color_map = {}
+    in_taxlabels = False
 
-    def csv_reader(csv_file_input, input_str):
-        '''
-        Reads csv-file and outputs the short name of a variable.
-
-        Input:
-            csv_file_input - string - name of csv-file in the directory of the script
-            input_str - string - a string value
-
-        Output:
-            output_str - string - short designation from csv-file
-        '''
-
-        with open(csv_file_input) as csv_file:
-            output_str = ''
-            reader = csv.DictReader(csv_file, delimiter=",",
-                                    fieldnames=["base", "new"])
-            for line in reader:
-                base = re.compile(line["base"])
-                if base.match(input_str):
-                    output_str = line["new"].strip()
-            return output_str
-    # parse tree file and find lines with taxa name and hex color
-    with open(tree_in, "r") as tree_f:
-        for line in tree_f:
-            if re.match('\ttaxlabels', line):
-                tl_fl = 1
+    with open(nexus_file) as f:
+        for line in f:
+            if line.strip().startswith("taxlabels"):
+                in_taxlabels = True
                 continue
-            if tl_fl == 1:
-                if line == ';\n':
-                    tl_fl = 0
-                else:
-                    # search hex code of color
-                    color = re.search(r'#[0-9a-z]+', line)
+            if in_taxlabels:
+                if line.strip() == ";":
+                    break
+                color_match = re.search(r"(#[0-9a-fA-F]{6})", line)
+                name_match = re.search(r"([A-Za-z0-9_\-./]+)", line)
+                if name_match:
+                    name = name_match.group(1)
+                    color = color_match.group(1) if color_match else None
                     if color:
-                        color = color.group()
-                        # taxa name
-                        seq_name = re.search(r"[A-Za-z0-9_\-\/.]+", line).group()
-                        #seq_name = seq_name[:6].replace('_', '-') + seq_name[6:]
-                        seq_name = seq_name.split('_')[0]
-                        # seq_name - taxon
-                        names_dict[seq_name] = csv_reader(csv_in, color)
+                        color_map.setdefault(color, []).append(name)
+    return color_map
 
-    files = os.listdir(rep_in)
-    for fasta_f in files:
-        if fasta_f.split('_')[-1:] == ['genotyped.fasta']:
+def extract_reference_annotations(color_map):
+    """Identify reference sequences and extract annotations: returns {color: (serotype, topotype, lineage)}"""
+    refs = {}
+    for color, names in color_map.items():
+        for name in names:
+            parts = name.split("/")
+            if len(parts) == 4:
+                _, serotype, topotype, lineage = parts
+                refs[color] = (serotype, topotype, lineage)
+                break
+    return refs
+
+def apply_typing(records, color_map, ref_ann, mode):
+    """
+    Apply serotype / topotype / lineage typing to FASTA records.
+    Missing or uncolored tips are assigned 'Unknown'.
+    """
+    name_to_color = {
+        name.split("/")[0]: color
+        for color, names in color_map.items()
+        for name in names
+    }
+
+    for record in records:
+        acc = record.id.split("/")[0]
+        parts = record.id.split("/")
+
+        # skip reference sequences
+        if len(parts) == 4:
             continue
-        fasta_f = rep_in + fasta_f
-        fasta_out = '.'.join(fasta_f.split('.')[:-1]) + '_genotyped.fasta'
-        fasta_seq = SeqIO.parse(fasta_f, 'fasta')
-        record_list = []
-        for record in fasta_seq:           
-            seq_name = record.id.split('/')[0]
 
-            if seq_name in names_dict.keys():
-                if record.id.endswith('Unknown'):              
-                    record.id = record.id[:-7] + names_dict[seq_name]
-                    unknown_counter += 1
-                else: 
-                    if record.id.split('/')[-1] != names_dict[seq_name] and record.id.split('/')[-1] == 'CATHAY':
-                            record.id = record.id[:-7] + '-' + 'CATHAY'
-                    elif record.id.split('/')[-1] != names_dict[seq_name] and record.id.split('/')[-1] == 'Pan-Asia-O':
-                            pass
-                    elif record.id.split('/')[-1] != names_dict[seq_name]:
-                        print('Genotype conflict: ', record.id)
-                        print('Old genotype: ', record.id.split('/')[-1])
-                        print('New genotype: ', names_dict[seq_name])
-                        record.id = record.id[:-len(record.id.split('/')[-1])] + names_dict[seq_name]
-                        conflict_counter +=1
-                record.description = ''
-            record_list.append(record)
-        SeqIO.write(record_list, fasta_out, 'fasta')
-    print('Unknown genotypes fixed: ', unknown_counter)
-    print('Genotype conflicts: ', conflict_counter)
+        # default unknowns
+        serotype, topotype, lineage = "Unknown", "Unknown", "Unknown"
+
+        # fill from colored reference if available
+        color = name_to_color.get(acc)
+        if color and color in ref_ann:
+            s, t, l = ref_ann[color]
+            serotype = s if s and s != "-" else "Unknown"
+            topotype = t if t and t != "-" else "Unknown"
+            lineage = l if l and l != "-" else "Unknown"
+
+        # update record id depending on mode
+        if mode == "serotype":
+            parts[-1] = serotype
+        elif mode == "topotype":
+            parts.append(topotype)
+        elif mode == "lineage":
+            parts.append(lineage)
+
+        record.id = "/".join(parts)
+        record.description = ""
+
+    return records
+
+def save_metadata(records, output_xlsx):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Metadata"
+
+    headers = ["Accession", "Country", "Host", "Isolation_year", "Serotype", "Topotype", "Lineage"]
+    ws.append(headers)
+
+    for record in records:
+        parts = record.id.split("/")
+        accession = parts[0] if len(parts) > 0 and parts[0] != "Unknown" else ""
+        country = parts[1] if len(parts) > 1 and parts[1] != "Unknown" else ""
+        host = parts[2] if len(parts) > 2 and parts[2] != "Unknown" else ""
+        year = parts[3] if len(parts) > 3 and parts[3] != "Unknown" else ""
+        serotype = parts[4] if len(parts) > 4 and parts[4] != "Unknown" else ""
+        topotype = parts[5] if len(parts) > 5 and parts[5] != "Unknown" else ""
+        lineage = parts[6] if len(parts) > 6 and parts[6] != "Unknown" else ""
+
+        ws.append([accession, country, host, year, serotype, topotype, lineage])
+
+    wb.save(output_xlsx)
+
+def run_single_mode(fasta_in, fasta_out, nexus_file, mode, metadata_out=None):
+    records = list(SeqIO.parse(fasta_in, "fasta"))
+    color_map = parse_colored_nexus(nexus_file)
+    ref_ann = extract_reference_annotations(color_map)
+    records = apply_typing(records, color_map, ref_ann, mode)
+    SeqIO.write(records, fasta_out, "fasta")
+    if metadata_out:
+        save_metadata(records, metadata_out)
+
+def run_batch_mode(fasta_in, fasta_out, nexus_dir, metadata_out=None):
+    temp_fasta = fasta_in
+    temp_files = []
+
+    for mode in ["serotype", "topotype", "lineage"]:
+        nexus_file = os.path.join(nexus_dir, f"{mode}.nexus")
+        temp_out = fasta_out + f".{mode}.tmp"
+        temp_files.append(temp_out)
+        run_single_mode(temp_fasta, temp_out, nexus_file, mode)
+        temp_fasta = temp_out
+
+    os.rename(temp_fasta, fasta_out)
+
+    # remove other temp files
+    for f in temp_files[:-1]:
+        if os.path.exists(f):
+            os.remove(f)
+
+    # save metadata
+    if metadata_out:
+        records = list(SeqIO.parse(fasta_out, "fasta"))
+        save_metadata(records, metadata_out)
+
+def main():
+    parser = argparse.ArgumentParser(description="Reference-based genotyping from colored Nexus trees")
+    parser.add_argument("-f", "--fasta", required=True, help="Input FASTA file")
+    parser.add_argument("-o", "--output", required=True, help="Output FASTA file")
+    parser.add_argument("-m", "--metadata", help="Output metadata file")
+    parser.add_argument("-n", "--nexus", help="Single colored Nexus tree")
+    parser.add_argument("-d", "--nexus_dir", help="Directory with serotype.nexus, topotype.nexus, lineage.nexus")
+    parser.add_argument("--mode", choices=["serotype", "topotype", "lineage"], help="Typing mode (required for single nexus)")
+
+    args = parser.parse_args()
+
+    if args.nexus_dir:
+        run_batch_mode(args.fasta, args.output, args.nexus_dir, metadata_out=args.metadata)
+    else:
+        run_single_mode(args.fasta, args.output, args.nexus, args.mode, metadata_out=args.metadata)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-in_rep", "--input_rep_fasta", type=str,
-                        help="Input repository with files in fasta format. \
-                        Alignment will not be processed if its name ends with \"_genotyped.fasta\"", required=True)
-    parser.add_argument("-in_tree", "--input_file_tree", type=str,
-                        help="Input colored tree in nexus format", required=True)
-    parser.add_argument("-in_csv", "--input_file_csv", type=str,
-                        help="Input table in csv format with colors in hex format and genotypes",
-                        required=True)
-    args = parser.parse_args()
-    genotyping(args.input_rep_fasta, args.input_file_tree, args.input_file_csv)
+    main()
