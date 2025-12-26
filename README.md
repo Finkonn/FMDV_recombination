@@ -98,6 +98,17 @@ python scripts\genotyping\genotyping.py -f your_alignment.fasta -o your_alignmen
 python scripts\genotyping\genotyping.py -f your_alignment.fasta -o your_alignment_annotated.fasta -m metadata_annotated.xlsx -n your_serotype_colored_tree.nexus --mode serotype
 ```
 
+## Tree visualisation
+
+Script `plot_gradient_trees_with_bars.R` can be used to visualise maximum likelihood trees. It requires a metadata table with columns:
+- "GBAC" - FASTA headers - should be the same as tree tips
+- "serotype" - serotype of the sequence 
+- "Topotype" - topotype of the sequence 
+- "lineage" - lineage of the sequence 
+- "color" - gradient colors of tree tips
+- "pool" - geographic pool of the sequence
+Also requires a script `modified_gradients.R` to be present in the same directory and a directory with phylogenetic trees in .treefile format. Colors of topotypes, lineages and pools can be edited as needed. The script also transforms long topotype names to shorter ones in the legend, i.e. "MIDDLE-EAST-SOUTH-ASIA-ME-SA" ~ "ME-SA". The output is trees in .svg format with gradient colored tip labels (according to serotypes) and color bars of serotypes (S), topotypes (T), lineages (L) and pools (P).
+
 ## Description and usage of scripts
 
 ### parse_wrlfmd.py
