@@ -107,6 +107,7 @@ Script `plot_gradient_trees_with_bars.R` can be used to visualise maximum likeli
 - "lineage" - lineage of the sequence 
 - "color" - gradient colors of tree tips
 - "pool" - geographic pool of the sequence
+
 Also requires a script `modified_gradients.R` to be present in the same directory and a directory with phylogenetic trees in .treefile format. Colors of topotypes, lineages and pools can be edited as needed. The script also transforms long topotype names to shorter ones in the legend, i.e. "MIDDLE-EAST-SOUTH-ASIA-ME-SA" ~ "ME-SA". The output is trees in .svg format with gradient colored tip labels (according to serotypes) and color bars of serotypes (S), topotypes (T), lineages (L) and pools (P).
 
 ## Description and usage of scripts
