@@ -1,4 +1,4 @@
-# Recombination dynamics of Foot-and-Mouth Disease virus
+# Temporal Dynamics of Recombination in Field Isolates of Foot-and-Mouth Disease Virus
 ### Mate Malichava, Alexander Lukashev and Yulia Aleshina
 
 The purpose of this work was to analyze the dynamics of natural recombination in Foot-and-Mouth Disease virus (FMDV, genus *Aphthovirus*). All data and scripts used in the study *"Recombination dynamics of Foot-and-Mouth Disease virus"* are freely available in this repository.
