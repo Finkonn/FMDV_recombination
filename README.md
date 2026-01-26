@@ -54,7 +54,7 @@ A jupyter notebook `parse_genbank.ipynb` is provided that filters and annotates 
 With default parameters, the output of the notebook is as follows:
 - `CDS.fasta` and `metadata.csv` - raw FASTA file and corresponding metadata table without any mappings or filtration
 - `CDS_mapped.fasta` and `metadata_mapped.csv` - FASTA file and corresponding metadata table only with host and country mappings
-- `CDS_mapped_and_filtered` and `metadata_mapped_and_filtered.csv` - FASTA file and corresponding metadata table with host and country mappings filtered by `references_to_remove.txt` and `isolation_sources_to_remove.txt`
+- `CDS_mapped_and_filtered.fasta` and `metadata_mapped_and_filtered.csv` - FASTA file and corresponding metadata table with host and country mappings filtered by `references_to_remove.txt` and `isolation_sources_to_remove.txt`
 
 ## Genotyping serotypes, topotypes and lineages - pipeline
 
