@@ -27,6 +27,7 @@ Tables and mappings required for scripts and data preparation are available in `
 - `isolation_sources_to_remove.txt` - a text file with line-separated isolation sources. Used in the script `scripts/parse_genbank.ipynb` (not required) to filter out GenBank records with experimental sequences and vaccines
 - `references_to_remove.txt` - a text file with line-separated references. Used in the script `scripts/parse_genbank.ipynb` (not required) to filter out GenBank records from specific experiments
 - `metadata_with_gradient_tree_colors.csv` - table with gradient colors of each tip for phylogenetic tree visualisation using `scripts/plot_gradient_trees_with_bars.R` script
+- `classification_table.xlsx` - classification table with representative strains for each FMDV topotype as available at https://www.wrlfmd.org/fmdv-genome/fmd-prototype-strains (accessed 29.01.26). Table contains serotypes, topotypes, lineages, sub-lineage, isolate names, accessions of genome sequences and corresponding references.
 
 Python and R scripts used in the analysis are located in `scripts/` directory.
 
