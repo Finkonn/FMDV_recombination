@@ -1,7 +1,7 @@
 # Temporal Dynamics of Recombination in Field Isolates of Foot-and-Mouth Disease Virus
 ### Mate Malichava, Alexander Lukashev and Yulia Aleshina
 
-The purpose of this work was to analyze the dynamics of natural recombination in Foot-and-Mouth Disease virus (FMDV, genus *Aphthovirus*). All data and scripts used in the study *"Temporal Dynamics of Recombination in Field Isolates of Foot-and-Mouth Disease Virus"* are freely available in this repository.
+All data and scripts used in the study *"Temporal Dynamics of Recombination in Field Isolates of Foot-and-Mouth Disease Virus"* are freely available in this repository.
 
 Bayesian and maximum likelihood phylogenetic trees, genome alignments, tables and mappings are located in `data/` directory.
 
@@ -19,7 +19,7 @@ Maximum likelihood phylogenetic trees of recombination-free regions are availabl
 - `Lpro.treefile`, `P1(VP2-VP3-VP1).treefile`, `P2.treefile`, `P3.treefile` - phylogenetic trees of recombination-free regions, as determined by recombination analysis of all complete genome sequences using RDP4
 - `A/`, `Asia1/`, `C/`, `O/`, `SAT1/`, `SAT2/`, `SAT3/` - folders containing phylogenetic trees of recombination-free regions of each serotype, as determined by RDP4 analysis of complete genome sequences of each serotype (coordinates in file names, i.e. `A_1-511.treefile` represent ungapped coordinates in the complete genome alignment)
 
-Bayesian phylogenetic trees of recombination-free areas in P1 region of serotypes A, Asia1, SAT1 and 4 samples of serotype O are available at `data/bayes_trees/` in `.tree` format
+Bayesian phylogenetic trees of recombination-free regions in P1 region of serotypes A, Asia1, SAT1 and 4 samples of serotype O are available in `data/bayes_trees/` in `.tree` format
 
 Tables and mappings required for scripts and data preparation are available in `data/tables_and_maps/`
 - `country_map.csv` - comma-separated mapping table with 2 columns: first column with names of countries to be replaced and second column with ISO-3166 codes of these countries to be replaced with. Used in the script `scripts/parse_genbank.ipynb` (not required) to replace country names with ISO-3166 codes for clean FASTA headers
@@ -50,7 +50,7 @@ Python and R scripts used in the analysis are located in `scripts/` directory.
 
 ## Parsing a GenBank file and generating a FASTA file with complete genome sequences
 
-A jupyter notebook `parse_genbank.ipynb` is provided that filters and annotates GenBank records from the .gb file based on selected maps (country and host annotation; isolation sources and references filtration), and extracts coding sequences into a FASTA file with annotated headers (**>Accession/country/host/year_of_isolation/serotype**). It is not required, but recommended to use `country_map.csv` and `host_map.csv` (may be edited as needed) for clear, standardized annotation of sequences, and `references_to_remove.txt` and `isolation_sources_to_remove.txt` for removing unneeded records.
+A jupyter notebook `parse_genbank.ipynb` filters and annotates GenBank records from the .gb file based on selected maps (country and host annotation; isolation sources and references filtration) and extracts coding sequences into a FASTA file with annotated headers (**>Accession/country/host/year_of_isolation/serotype**). It is not required, but recommended to use `country_map.csv` and `host_map.csv` (may be edited as needed) for clear, standardized annotation of sequences, and `references_to_remove.txt` and `isolation_sources_to_remove.txt` for removing unneeded records.
 With default parameters, the output of the notebook is as follows:
 - `CDS.fasta` and `metadata.csv` - raw FASTA file and corresponding metadata table without any mappings or filtration
 - `CDS_mapped.fasta` and `metadata_mapped.csv` - FASTA file and corresponding metadata table only with host and country mappings
